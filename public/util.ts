@@ -80,6 +80,24 @@ const operations: Operation[] = [
     method: "DELETE",
     fields: { id: "input" },
   },
+  {
+    name: "Get Likes (empty for all)",
+    endpoint: "/api/likes",
+    method: "GET",
+    fields: { author: "input" },
+  },
+  {
+    name: "Add Like",
+    endpoint: "/api/likes",
+    method: "POST",
+    fields: { id: "input" },
+  },
+  {
+    name: "Delete Like",
+    endpoint: "/api/likes/:id",
+    method: "DELETE",
+    fields: { id: "input" },
+  }, 
   //
   // ...
   //

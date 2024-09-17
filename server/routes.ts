@@ -2,7 +2,7 @@ import { ObjectId } from "mongodb";
 
 import { Router, getExpressRouter } from "./framework/router";
 
-import { Authing, Friending, Posting, Sessioning } from "./app";
+import { Authing, Friending, Liking, Posting, Sessioning } from "./app";
 import { PostOptions } from "./concepts/posting";
 import { SessionDoc } from "./concepts/sessioning";
 import Responses from "./responses";
@@ -105,6 +105,35 @@ class Routes {
     await Posting.assertAuthorIsUser(oid, user);
     return Posting.delete(oid);
   }
+
+  @Router.get("/likes")
+  @Router.validate(z.object({ author: z.string().optional() }))
+  async getLikes(author?: string) {
+    let likes;
+    if (author) {
+      const id = (await Authing.getUserByUsername(author))._id;
+      likes = await Liking.getByAuthor(id);
+    } else {
+      likes = await Liking.getLikes();
+    }
+    return Responses.likes(likes);
+  }
+
+  @Router.post("/likes")
+  async createLike(session: SessionDoc, id: string) {
+    const user = Sessioning.getUser(session);
+    const postId = new ObjectId(id);
+    const created = await Liking.addLike(user, postId);
+    return { msg: created.msg, like: await Responses.like(created.like) };
+  }
+
+  @Router.delete("/likes/:id")
+  async deleteLike(session: SessionDoc, id: string) {
+    const user = Sessioning.getUser(session);
+    const oid = new ObjectId(id);
+    await Liking.assertAuthorIsUser(oid, user);
+    return Liking.delete(oid);
+  }  
 
   @Router.get("/friends")
   async getFriends(session: SessionDoc) {

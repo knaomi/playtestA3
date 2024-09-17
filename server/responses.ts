@@ -1,5 +1,6 @@
 import { Authing } from "./app";
 import { AlreadyFriendsError, FriendNotFoundError, FriendRequestAlreadyExistsError, FriendRequestDoc, FriendRequestNotFoundError } from "./concepts/friending";
+import { LikeAuthorNotMatchError, LikeDoc } from "./concepts/liking";
 import { PostAuthorNotMatchError, PostDoc } from "./concepts/posting";
 import { Router } from "./framework/router";
 
@@ -28,6 +29,26 @@ export default class Responses {
   }
 
   /**
+ * Convert LikeDoc into more readable format for the frontend by converting the like id into a string.
+ */
+  static async like(like: LikeDoc | null) {
+    if (!like) {
+      return like;
+    }
+    const author = await Authing.getUserById(like.author);
+    return { ...like, author: author.username };
+  }
+
+  /**
+   * Same as {@link like} but for an array of LikeDoc for improved performance.
+   */
+  static async likes(likes: LikeDoc[]) {
+    const authors = await Authing.idsToUsernames(likes.map((like) => like.author));
+    return likes.map((like, i) => ({ ...like, author: authors[i] }));
+  }
+
+
+  /**
    * Convert FriendRequestDoc into more readable format for the frontend
    * by converting the ids into usernames.
    */
@@ -40,6 +61,11 @@ export default class Responses {
 }
 
 Router.registerError(PostAuthorNotMatchError, async (e) => {
+  const username = (await Authing.getUserById(e.author)).username;
+  return e.formatWith(username, e._id);
+});
+
+Router.registerError(LikeAuthorNotMatchError, async (e) => {
   const username = (await Authing.getUserById(e.author)).username;
   return e.formatWith(username, e._id);
 });
